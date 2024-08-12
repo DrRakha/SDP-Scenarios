@@ -4,7 +4,9 @@ Overview
 This repository contains the replication package for the research paper titled "Contrasting the Hyperparameter Tuning Impact
 Across Software Defect Prediction Scenarios" by Mohamed Sami Rakha, Andriy Miranskyy Member, and Daniel Alencar da Costa. The purpose of this package is to allow others to replicate the results and experiments described in the paper.
 
-Study Abstract:
+
+<!-- Study Abstract -->
+
 Software defect prediction (SDP) is crucial for delivering high-quality software products. The SDP activities help software teams better utilize their software quality assurance efforts, improving the quality of the final product.
 Recent research has indicated that prediction performance improvements in SDP are achievable by applying hyperparameter tuning to a particular SDP scenario (e.g., predicting defects for a future version). However, the positive impact resulting from the hyperparameter tuning step may differ based on the targeted SDP scenario. Comparing the impact of hyperparameter tuning across two SDP scenarios is necessary to provide comprehensive insights and enhance the robustness, generalizability, and, eventually, the practicality of SDP modeling for quality assurance. 
 
@@ -89,5 +91,7 @@ Citation
 If you use this replication package in your research, please cite the original paper as follows:
 
 scss
-Copy code
-[Author(s)]. (Year). [Research Paper Title]. [Journal/Conference]. [DOI or URL]
+
+<!-- Copy code -->
+[Mohamed Sami Rakha, Andriy Miranskyy Member, Daniel Alencar da Costa]. (2024). [Contrasting the Hyperparameter Tuning Impact
+Across Software Defect Prediction Scenarios]. [Journal/Conference]. [DOI or URL]
