@@ -22,70 +22,50 @@ README.md: This file, providing an overview and instructions.
 Prerequisites
 Before running the code, ensure that you have the following software installed:
 
-Python (>=3.6)
-Required Python libraries (listed in requirements.txt or environment.yml)
+R version 4.3.2 (2023-10-31 ucrt)
+Required R libraries (listed in the header of each R script)
+R-Studio is recommended
 Any other software or tools specified in the paper
 Installation
 Clone the repository:
 
-bash
-Copy code
-git clone https://github.com/username/repository.git
-cd repository
-Install dependencies:
+#Running Experiments 
+There are two mean evaluation setups: 
+Exp1: Inner Version Defect Prediction (IVDP) 
+Exp4: Cross Version Defect Prediction (CVDP)
 
-If using requirements.txt:
+#The Datasets path per SDP scenario:
+IVDP: Data/Exp1/Datasets_TrainingOneReleaseTest_Exp1
+CVDP: Data/Exp4/Datasets_TrainingOneReleaseTest_Exp4
 
-bash
-Copy code
-pip install -r requirements.txt
-If using environment.yml:
+#R-Script to run hyperparameter tuning 
+SourceCode/Run_PerModel_Runs_Save_Models.R
 
-bash
-Copy code
-conda env create -f environment.yml
-conda activate your-environment-name
-Data
-Place the data files in the data/ directory. Ensure that the data is formatted as described in the paper. If you need the data, contact the authors or check the supplementary materials provided with the paper.
+Following is an example of running this script: 
 
-Usage
-Data Processing:
+Rscript  SourceCode/Run_PerModel_Runs_Save_Models.R  <Optimization Metric> <SDP Scenario> <Job ID>
+Rscript  SourceCode/Run_PerModel_Runs_Save_Models.R  Recall Exp1 1
 
-Run the data preprocessing script to prepare the data for analysis:
 
-bash
-Copy code
-python scripts/preprocess_data.py
-Model Training:
+#Scripts to generate figures: 
+To generate the main figures and analysis in the paper, please use the following script:
+SourceCode/Analysis/Main_Figures_Generation.R
 
-Train the model using the provided scripts:
 
-bash
-Copy code
-python scripts/train_model.py
-Evaluation:
 
-Evaluate the trained model and generate results:
 
-bash
-Copy code
-python scripts/evaluate_model.py
-Reproducing Results:
+To generate the analysis related to hyperparameter changes, please use the following script:
+SourceCode/Analysis/RQ1_Hyperparametes_Analysis.R
 
-To reproduce the results presented in the paper, run the following commands in order:
-
-bash
-Copy code
-python scripts/preprocess_data.py
-python scripts/train_model.py
-python scripts/evaluate_model.py
-The results will be saved in the results/ directory.
+To generate the analysis related to the feature importance differences, please use the following script: 
+SourceCode/Analysis/RQ2_VarriableImportance.R
+ 
 
 Notes
 Ensure that you have the necessary permissions to access and use the data.
 The scripts assume that the working directory is the root of the repository.
 Contact
-For any questions or issues, please contact [Your Name] at [Your Email Address].
+For any questions or issues, please contact Dr.Mohamed Rakha at rakha@torontomu.ca.
 
 Citation
 If you use this replication package in your research, please cite the original paper as follows:
