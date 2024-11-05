@@ -1,8 +1,44 @@
 # Contrasting-the-Hyperparameter-Tuning-Impact-Across-Software-Defect-Prediction-Scenarios
-Replication Package for [Research Paper Title]
-Overview
-This repository contains the replication package for the research paper titled "Contrasting the Hyperparameter Tuning Impact
-Across Software Defect Prediction Scenarios" by Mohamed Sami Rakha, Andriy Miranskyy Member, and Daniel Alencar da Costa. The purpose of this package is to allow others to replicate the results and experiments described in the paper.
+
+### Replication Package for [Research Paper Title]
+
+## Overview
+
+This repository contains the replication package for the research paper, _"Contrasting the Hyperparameter Tuning Impact Across Software Defect Prediction Scenarios,"_ authored by Mohamed Sami Rakha, Andriy Miranskyy, and Daniel Alencar da Costa. This package provides the necessary materials to replicate the results and experiments presented in the paper.
+
+## Abstract
+
+Software defect prediction (SDP) plays a crucial role in delivering high-quality software, helping teams optimize their quality assurance efforts to improve final product quality. Recent research shows that applying hyperparameter tuning can enhance prediction performance for specific SDP scenarios (e.g., predicting defects in future versions). However, the tuning impact may vary across different SDP scenarios. Comparing these impacts across scenarios is essential for improving the robustness, generalizability, and practicality of SDP modeling.
+
+In this study, we contrast the impact of hyperparameter tuning across two critical SDP scenarios:
+1. **Inner Version Defect Prediction (IVDP)**
+2. **Cross Version Defect Prediction (CVDP)**
+
+Key differences between these scenarios include the prediction scope and the evaluation setups used. Our experiments apply 28 machine learning algorithms, 45 post-release software datasets, two tuning algorithms, and five optimization metrics. Statistical analyses reveal significant differences in SDP performance impact, both overall and per algorithm, highlighting that smaller projects are more susceptible to larger performance differences. These results emphasize the importance of considering SDP scenarios when anticipating performance gains from hyperparameter tuning.
+
+## Contents
+
+- **`data/`**: Contains the datasets used in experiments.
+- **`scripts/`**: Includes scripts for data processing, model training, and evaluation.
+- **`results/`**: Stores output files and experiment results.
+- **`README.md`**: This document, providing an overview and usage instructions.
+
+## Prerequisites
+
+Before running the code, ensure you have the following:
+
+- **R** version 4.3.2 (2023-10-31 ucrt)
+- Required R libraries (listed in each R script header)
+- **RStudio** (recommended for convenience)
+- Any additional tools or software noted in the paper
+
+## Installation
+
+Clone the repository to your local machine:
+
+```bash
+git clone https://github.com/YourUsername/Contrasting-the-Hyperparameter-Tuning-Impact-Across-Software-Defect-Prediction-Scenarios.git
+ ```
 
 
 <!-- Study Abstract -->
