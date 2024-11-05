@@ -14,7 +14,7 @@ In this study, we contrast the impact of hyperparameter tuning across two critic
 1. **Inner Version Defect Prediction (IVDP)**
 2. **Cross Version Defect Prediction (CVDP)**
 
-Key differences between these scenarios include the prediction scope and the evaluation setups used. Our experiments apply 28 machine learning algorithms, 45 post-release software datasets, two tuning algorithms, and five optimization metrics. Statistical analyses reveal significant differences in SDP performance impact, both overall and per algorithm, highlighting that smaller projects are more susceptible to larger performance differences. These results emphasize the importance of considering SDP scenarios when anticipating performance gains from hyperparameter tuning.
+Key differences between these scenarios include the prediction scope and the evaluation setups used. Our experiments apply 28 machine learning algorithms, 53 post-release software datasets, two tuning algorithms, and five optimization metrics. Statistical analyses reveal significant differences in SDP performance impact, both overall and per algorithm, highlighting that smaller projects are more susceptible to larger performance differences. These results emphasize the importance of considering SDP scenarios when anticipating performance gains from hyperparameter tuning.
 
 ## Contents
 
