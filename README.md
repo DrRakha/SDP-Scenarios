@@ -19,7 +19,7 @@ Key differences between these scenarios include the prediction scope and the eva
 ## Contents
 
 - **`data/`**: Contains the datasets used in experiments.
-- **`scripts/`**: Includes scripts for data processing, model training, and evaluation.
+- **`SourceCode/`**: Includes scripts for data processing, model training, and evaluation.
 - **`results/`**: Stores output files and experiment results.
 - **`README.md`**: This document, providing an overview and usage instructions.
 
