@@ -1,0 +1,3 @@
+TestROC,TestMCC,TestPrecision,TestRecall,TestF1,TestKappa,TestAccuracy,TestSpecificity,TrainAccuracy,TrainKappa,TrainROC,TrainSens,TrainSpec,TrainAUC,TrainPrecision,TrainRecall,TrainF,DataSet,Model,iteration,RunTime,NRowTrainData,NRowTestData,countTotalChecks,nonEqualROCValues,nonEqualAccuracyValues,countNullModels
+0.5,0,NA,0,NA,0,0.891734279918864,1,0.855932545143259,0,0.5,0,1,0,NaN,0,NaN,eclipse-2.1.csv,pcaNNet,5,17.1379999999772,6729,7888,0,0,0,2 
+0.5,0,NA,0,NA,0,0.737891737891738,1,0.887343652614898,0,0.5,0,1,0,NaN,0,NaN,ant-1.6.csv,pcaNNet,5,6.22100000001956,293,351,0,0,0,2 

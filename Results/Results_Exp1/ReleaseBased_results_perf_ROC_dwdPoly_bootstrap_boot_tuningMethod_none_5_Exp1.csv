@@ -1,0 +1,1 @@
+TestROC,TestMCC,TestPrecision,TestRecall,TestF1,TestKappa,TestAccuracy,TestSpecificity,TrainAccuracy,TrainKappa,TrainROC,TrainSens,TrainSpec,TrainAUC,TrainPrecision,TrainRecall,TrainF,DataSet,Model,iteration,RunTime,NRowTrainData,NRowTestData,countTotalChecks,nonEqualROCValues,nonEqualAccuracyValues,countNullModels
