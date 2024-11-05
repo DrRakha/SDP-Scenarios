@@ -40,6 +40,33 @@ Clone the repository to your local machine:
 git clone https://github.com/YourUsername/Contrasting-the-Hyperparameter-Tuning-Impact-Across-Software-Defect-Prediction-Scenarios.git
  ```
 
+## Running Experiments
+
+This package supports two primary SDP evaluation setups:
+
+- **Exp1**: Inner Version Defect Prediction (IVDP)
+- **Exp4**: Cross Version Defect Prediction (CVDP)
+
+### Dataset Paths for Each SDP Scenario
+
+- **IVDP**: `data/Exp1/Datasets_TrainingOneReleaseTest_Exp1`
+- **CVDP**: `data/Exp4/Datasets_TrainingOneReleaseTest_Exp4`
+
+### Running Hyperparameter Tuning
+
+To run hyperparameter tuning for a specific scenario, use the following R script:
+
+- **Script**: `SourceCode/Run_PerModel_Runs_Save_Models.R`
+
+Example command:
+
+```bash
+Rscript SourceCode/Run_PerModel_Runs_Save_Models.R <Optimization Metric> <SDP Scenario> <Job ID>
+# Example
+Rscript SourceCode/Run_PerModel_Runs_Save_Models.R Recall Exp1 1
+```
+
+
 
 <!-- Study Abstract -->
 
