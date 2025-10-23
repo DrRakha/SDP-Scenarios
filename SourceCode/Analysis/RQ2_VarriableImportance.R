@@ -245,8 +245,8 @@ ggplot(plot_data, aes(x = factor(ExpMode, levels = c("IVDP", "CVDP")), y = Diffe
 
  
 
-dev.copy2pdf(width=14.52,height=19.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceDelta.pdf",sep=''));
-dev.off();
+#dev.copy2pdf(width=14.52,height=19.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceDelta.pdf",sep=''));
+#dev.off();
 
  
 
@@ -285,64 +285,117 @@ cvdp_diff <- max_diff_base %>%
 
 ranked_variables_cvdp <- cvdp_diff %>% pull(Variable)
 
+ nrow(ivdp_diff)
+ 
+ ranked_variables_ivdp
  
  
- ggplot(ivdp_diff, aes(x = factor(Variable, levels = ranked_variables_ivdp), y = MaxDiff, fill = ExpMode)) +
+ 
+# xPlotdata   <- plot_data %>% filter(ExpMode == "IVDP")
+ 
+ 
+ top50_ivdp <- ivdp_diff %>%
+   arrange(desc(MaxDiff)) %>%
+   slice_head(n = 30)
+ head(ivdp_diff)
+
+ # Extract the ordered variable names (to control axis order)
+ ranked_variables_ivdp_top50 <- top50_ivdp$Variable
+ 
+ # Filter plot_data to only include top 100 variables
+ plot_data_top50 <- plot_data %>%
+   filter(Variable %in% ranked_variables_ivdp_top50, ExpMode == "IVDP")
+ 
+ 
+ ranked_variables_ivdp_top50 <- top50_ivdp %>%
+   arrange(MaxDiff) %>%
+   pull(Variable)
+ 
+  
+ 
+ ggplot(top50_ivdp, aes(x = factor(Variable, levels = ranked_variables_ivdp_top50), y = MaxDiff, fill = ExpMode)) +
    # geom_bar(stat = "identity", position = "dodge", color = "black") +  # Bars for max value
-   geom_jitter(data = plot_data %>% filter(ExpMode == "IVDP"),
-               aes(x = factor(Variable, levels = ranked_variables_ivdp), y = Difference),
+   geom_jitter(data = plot_data_top50 %>% filter(ExpMode == "IVDP"),
+               aes(x = factor(Variable, levels = ranked_variables_ivdp_top50), y = Difference),
                width = 0.2, height = 0, color = "#6FC0DB", fill = "lightblue", shape = 21, stroke = 0.5, alpha = 0.7) +  # Scatter plot of all Differences
-   geom_point(data = ivdp_diff, aes(x = factor(Variable, levels = ranked_variables_ivdp), y = MaxDiff),
+   geom_point(data = top50_ivdp, aes(x = factor(Variable, levels = ranked_variables_ivdp_top50), y = MaxDiff),
               color = "lightblue", size = 2, shape = 21, fill = "red") +  # Red point for max value
    scale_fill_manual(values = c("IVDP" = "lightblue")) +
    coord_flip() +  # Flip coordinates to make it horizontal
    scale_y_continuous(position = "right", limits = c(-500, 1500)) +  # Move y-axis to the right and limit range +  # Move y-axis to the right
-   labs(title = "IVDP Max Differences and Distribution",
-        x = "Feature Name (Ranked by Max Difference)",
+   labs(x = "Feature Name",
         y = "Varriable Importance Difference") +
+   theme_minimal() +
    theme(plot.margin = margin(b = 30, l = 10,t = 1,r = 1), 
          plot.tag.position = c(0.52, -0.05), 
          plot.tag = element_text(size = 8),  
-         axis.text.x = element_text(face = "bold", size = 10, angle = 90, vjust = 0.5, hjust = 1), 
-         axis.title.y = element_text(size = 17),
+         axis.text.x = element_text(size = 13, angle = 90, vjust = -0.0, hjust = 0, margin = margin(t = 10)), 
+         axis.text.y = element_text(size = 14), 
+         axis.title.y = element_text(size = 20,  margin = margin(r = 5, l=5)),
+         axis.title.x = element_text(size = 20, margin = margin(t = 15)),
          strip.text = element_text(size = 14), 
-         panel.border = element_rect(color = "#CCCCCC", fill = NA, size = 1),
+         panel.border = element_rect(color = "#FEFEEF", fill = NA, size = 1),
          plot.title = element_text(hjust = 0.5)) +  # Center the title
    theme(legend.position = "none")
  
  
-dev.copy2pdf(width=9.52,height=18.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceIVDPMax.pdf",sep=''));
+dev.copy2pdf(width=9.52,height=8.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceIVDPMax.pdf",sep=''));
 dev.off();
 
  
 
  
 
-ggplot(cvdp_diff, aes(x = factor(Variable, levels = ranked_variables_cvdp), y = MaxDiff, fill = ExpMode)) +
+
+
+top50_cvdp <- cvdp_diff %>%
+  arrange(desc(MaxDiff)) %>%
+  slice_head(n = 30)
+head(cvdp_diff)
+
+# Extract the ordered variable names (to control axis order)
+ranked_variables_cvdp_top50 <- top50_cvdp$Variable
+
+# Filter plot_data to only include top 100 variables
+plot_data_top50 <- plot_data %>%
+  filter(Variable %in% ranked_variables_cvdp_top50, ExpMode == "CVDP")
+
+
+ranked_variables_cvdp_top50 <- top50_cvdp %>%
+  arrange(MaxDiff) %>%
+  pull(Variable)
+
+
+
+
+ggplot(top50_cvdp, aes(x = factor(Variable, levels = ranked_variables_cvdp_top50), y = MaxDiff, fill = ExpMode)) +
  # geom_bar(stat = "identity", position = "dodge", color = "black") +  # Bars for max value
-  geom_jitter(data = plot_data %>% filter(ExpMode == "CVDP"),
-              aes(x = factor(Variable, levels = ranked_variables_cvdp), y = Difference),
+  geom_jitter(data = plot_data_top50 %>% filter(ExpMode == "CVDP"),
+              aes(x = factor(Variable, levels = ranked_variables_cvdp_top50), y = Difference),
       width = 0.2, height = 0, color = "darkgray", fill = "gray", shape = 21, stroke = 0.5, alpha = 0.7) +# Scatter plot of all Differences
-  geom_point(data = cvdp_diff, aes(x = factor(Variable, levels = ranked_variables_cvdp), y = MaxDiff),
+  geom_point(data = top50_cvdp, aes(x = factor(Variable, levels = ranked_variables_cvdp_top50), y = MaxDiff),
              color = "darkgray", size = 2, shape = 21, fill = "red") +  # Red point for max value
   scale_fill_manual(values = c("CVDP" = "gray")) +
   coord_flip() +  # Flip coordinates to make it horizontal
   scale_y_continuous(position = "right", limits = c(-500, 1500))  +  # Move y-axis to the right
-  labs(title = "CVDP Max Differences and Distribution",
-       x = "Feature Name (Ranked by Max Difference)",
+  labs(x = "Feature Name",
        y = "Varriable Importance Difference") +
+  theme_minimal() +
   theme(plot.margin = margin(b = 30, l = 10,t = 1,r = 1), 
         plot.tag.position = c(0.52, -0.05), 
         plot.tag = element_text(size = 8),  
-        axis.text.x = element_text(face = "bold", size = 10, angle = 90, vjust = 0.5, hjust = 1), 
-        axis.title.y = element_text(size = 17),
+        axis.text.x = element_text(size = 13, angle = 90, vjust = -0.0, hjust = 0, margin = margin(t = 10)), 
+        axis.text.y = element_text(size = 14), 
+        axis.title.y = element_text(size = 20,  margin = margin(r = 5, l=5)),
+        axis.title.x = element_text(size = 20, margin = margin(t = 15)),
         strip.text = element_text(size = 14), 
-        panel.border = element_rect(color = "#CCCCCC", fill = NA, size = 1),
+        panel.border = element_rect(color = "#FEFEEF", fill = NA, size = 1),
         plot.title = element_text(hjust = 0.5)) +  # Center the title
   theme(legend.position = "none")
  
 
-dev.copy2pdf(width=9.52,height=18.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceCVDPMax.pdf",sep=''));
+ 
+dev.copy2pdf(width=9.52,height=8.2 , file=paste(pathToSave,"/",targetMetricOptions,"VarriableImportanceCVDPMax.pdf",sep=''));
 dev.off();
 
 
