@@ -27,6 +27,8 @@ library("stringr")
 library(reshape2)
 library(dplyr)
 require(data.table)
+library(tidyr)
+library(ScottKnottESD)
 
 
 set.seed(895)
@@ -37,7 +39,7 @@ set.seed(895)
 
 #targetMetricOptions<- c("ROC","Recall","F")
 #targetMetricOptions<- c("ROC" ,"Recall" ,"Precision" ,"F" ,"Accuracy")
-targetMetricOptions<- c("ROC" ,"Recall" ,"Precision" ,"F" ,"Accuracy")
+targetMetricOptions<- c("ROC" )
 allpercentage_negative <- NULL
 Allmerged_all_data <- NULL
 EffectSizeAll <- ""
@@ -51,14 +53,18 @@ enableBootstrap <- "boot"
 # Exp1 or Exp4
 # Exp1 : one release in training - one release testing
 # Exp4 : multiple releases in training - one release testing  
+# Exp4 is the focus of TSE results - Exp1 could be ignored
 expMode <- "Exp4"
+# Must be true to generate TSE results
 enableIVDP_one_release <- TRUE
 
 ###########################Start Loading Results Loop ############################
 #################################################################################
-
+# To Get TSE results must have the following config
+#expModeOptions<- c("Exp4","Exp1")
+#tuneOptions<- c("none","grid")
 expModeOptions<- c("Exp4","Exp1")
-tuneOptions<- c("none","grid","random")
+tuneOptions<- c("none","random")
 
 
 for ( expModeSelection in (expModeOptions)) {
@@ -457,12 +463,128 @@ if (enableIVDP_one_release)
   nrow(merged_all_data)
   
 }
+########## Rebuttal Major TSE ##################### 
+## Rebuttal - Getting top 10 ML Algorithms 
 
+get_top1_model_counts <- function(merged_data, metric_col) {
  
+  top_rank_count <- merged_data %>%
+    group_by(DataSet_Tunned) %>%                                   # For each dataset
+    slice_max(order_by =  .data[[metric_col]], n = 1, with_ties = FALSE) %>%  # Keep only the top-1 algorithm
+    count(Model_Tunned, name = "Top1_Count") %>%          # Count how often each algorithm was ranked #1
+    arrange(desc(Top1_Count))                               # Sort by count
+  
+  
+  
+  model_top_counts_ranked <- top_rank_count %>%
+    group_by(Model_Tunned) %>%
+    summarise(Total_Top1_Count = n()) %>%
+    arrange(desc(Total_Top1_Count))
+  
+  return(model_top_counts_ranked)
+}
+
+library(dplyr)  # loaded last
+
+run_sk_esd <- function(data, metric_col) {
+  # 1. Select relevant columns
+  df_long <- data %>%
+    dplyr::select(DataSet_Tunned, Model_Tunned, metric = .data[[metric_col]])
+  
+  # 2. Pivot to wide format with zero fill
+  df_wide <- df_long %>%
+    pivot_wider(
+      names_from  = Model_Tunned,
+      values_from = metric,
+      values_fill = list(metric = 0)
+    ) %>%
+    mutate(across(-DataSet_Tunned, as.numeric))
+  
+  # 3. Clean any remaining non-finite values
+ # df_clean <- df_wide %>%
+    #mutate(across(-DataSet_Tunned,
+         #         ~ ifelse(is.finite(.x), .x, 0)))
+  
+  # 4. Drop non-numeric identifier column
+  numeric_matrix <- df_wide %>% select(-DataSet_Tunned)
+  
+  # 5. Run Scott‑Knott ESD (non-parametric by default)
+  sk <- sk_esd(numeric_matrix, version = "np")
+  return(sk)
+}
+
+## This function does SK by Ranking desecending value which is not accurate - to be removed. 
+run_sk_esd_rank <- function(data, metric_col) {
+  # 1. Add per-dataset ranks
+  df_ranked <- data %>%
+    group_by(DataSet_Tunned) %>%
+    mutate(rank = min_rank((.data[[metric_col]]))) %>%
+    ungroup() %>%
+    select(DataSet_Tunned, Model_Tunned, rank)
+  
+  # 2. Pivot to wide format with fill for models missing in some datasets
+  wide_rank <- df_ranked %>%
+    pivot_wider(
+      names_from  = Model_Tunned,
+      values_from = rank,
+      values_fill = list(rank = max(df_ranked$rank, na.rm = TRUE) + 1)
+    ) %>%
+    mutate(across(-DataSet_Tunned, as.numeric))
+  
+  # 3. Clean up any non-finite (just in case)
+  wide_clean <- wide_rank %>%
+    mutate(across(-DataSet_Tunned, ~ ifelse(is.finite(.x), .x, NA_real_)))
+  
+  # 4. Remove identifier column
+  numeric_matrix <- wide_clean %>% select(-DataSet_Tunned)
+  
+  # 5. Scott-Knott on ranks
+  sk <- sk_esd(numeric_matrix, version = "np")
+  return(sk)
+}
+
+
+
+
+if (enableIVDP_one_release)
+{
+ 
+ # datasortTop1IVDPnonTunned <- get_top1_model_counts(merged_all_dataExp1,IVDPnonTunnedMetricExp1)
+  
+ # sk_result <- run_sk_esd(merged_all_dataExp1, IVDPnonTunnedMetricExp1)
+ # sk_result$groups
+ # sk_result$m.inf
+  
+  
+ # datasortTop1IVDPTunned <-get_top1_model_counts(merged_all_dataExp1,IVDPtunnedMetricExp1)
+  
+
+  #sk_result <- run_sk_esd(merged_all_dataExp1, IVDPtunnedMetricExp1)
+  #sk_result$groups
+  #sk_result$m.inf
+  
+}
+
 ## CVDP
 merged_all_data$CVDPMetric_Diff <- merged_all_data[,CVDPtunnedMetric]- merged_all_data[, CVDPnonTunnedMetric]
 merged_all_data$CVDP_RelativeImprovPercentage <-  (merged_all_data$CVDPMetric_Diff/(merged_all_data[, CVDPnonTunnedMetric]+epsilon)) * 100
 
+
+
+#datasortTop1CVDPnonTunned <- get_top1_model_counts(merged_all_data,CVDPtunnedMetric)
+#datasortTop1CVDPTunned <-get_top1_model_counts(merged_all_data,CVDPnonTunnedMetric)
+
+
+#sk_result <- run_sk_esd(merged_all_data, CVDPnonTunnedMetric)
+#sk_result$groups
+#sk_result$m.inf
+
+#sk_result <- run_sk_esd(merged_all_data, CVDPtunnedMetric)
+#sk_result$groups
+#sk_result$m.inf
+
+ 
+ 
 ## This check drop some values if needed - Clean NaN / INF percentages for accurate comparison 
 cat("Total number of rows compared before cleaning NaNs/Inf: ",nrow(merged_all_data), "\n")
 
@@ -647,7 +769,7 @@ options(encoding = "UTF-8")
 
 
 # Save the ggplot to a file
-ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_ggplotPerfImpactPercentage.pdf",sep=''), plot = last_plot(), device = "pdf", width = 5, height = 5.2, units = "in", dpi = 300)
+#ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_ggplotPerfImpactPercentage.pdf",sep=''), plot = last_plot(), device = "pdf", width = 5, height = 5.2, units = "in", dpi = 300)
 
 
 
@@ -760,11 +882,129 @@ ggplot(Allmerged_all_data, aes(x = factor("IVDP"), y = IVDP_RelativeImprovPercen
   facet_wrap(~ GroupMetric, scales = "fixed", ncol = 5, labeller = labeller(GroupMetric = as_labeller(facet_labels)))
 
 
+# End of RQ1 main Figure
  
 
 
 # Save the ggplot to a file
-ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_ggplotAllMetricsImpactPercentageTSE.pdf",sep=''), plot = last_plot(), device = "pdf", width = 5, height = 3.2, units = "in", dpi = 300)
+ ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_ggplotAllMetricsImpactPercentageTSE.pdf",sep=''), plot = last_plot(), device = "pdf", width = 5, height = 3.2, units = "in", dpi = 300)
+
+
+
+
+
+
+
+
+
+########## Rebuttal Major TSE ##################### 
+##### Show negative impact
+###################################################
+colnames(Allmerged_all_data)
+
+summary(Allmerged_all_data$CVDP_RelativeImprovPercentage)
+Allmerged_all_data$CVDP_RelativeImprovPercentage
+
+
+negativeCVDP <- Allmerged_all_data %>% filter(CVDP_RelativeImprovPercentage <0)
+
+negativeCVDP$DataSet_Tunned <- sub("\\.csv$", "", negativeCVDP$DataSet_Tunned)
+
+negativeCVDP$CVDP_RelativeImprovPercentage
+
+colnames(negativeCVDP)
+
+
+
+# Prepare frequency data
+freq_data <- negativeCVDP %>%
+  count(DataSet_Tunned) %>%
+  rename(value = n) %>%
+  mutate(type = "Frequency")
+
+# Prepare improvement data
+improv_data <- negativeCVDP %>%
+  select(DataSet_Tunned, value = CVDP_RelativeImprovPercentage) %>%
+  mutate(type = "Performance Impact")
+
+# Combine and ensure 'Frequency' comes first (for top placement in facet)
+combined_data <- bind_rows(freq_data, improv_data)
+combined_data$type <- factor(combined_data$type, levels = c("Frequency", "Performance Impact"))
+combined_data$DataSet_Tunned <- factor(combined_data$DataSet_Tunned)
+
+n_distinct(combined_data$DataSet_Tunned)
+
+# Plot
+ggplot(combined_data, aes(x = DataSet_Tunned, y = value)) +
+  geom_bar(stat = "identity", fill = "#CCCCCC",   data = subset(combined_data, type == "Frequency")) +
+  geom_boxplot(fill = "lightgray", data = subset(combined_data, type == "Performance Impact")) +
+  facet_grid(rows = vars(type), scales = "free_y", switch = "y") +
+  labs(
+    x = NULL,
+    y = NULL,
+    #title = "Dataset Frequency and CVDP Improvement Distribution"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text.y.left = element_text(angle = 90 , size = 16),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 12),
+    panel.border = element_rect(color = "#CCCCCC", fill = NA, size = 1),
+    strip.placement = "outside",
+    strip.background = element_blank(),
+    axis.text.y = element_text(size = 13),
+    axis.title.x = element_text( size = 20),
+    axis.title.y = element_text( size = 20)
+  )
+
+#ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_DatasetAlgCVDPNegativeDistrubtion.pdf",sep=''), plot = last_plot(), device = "pdf", width = 10, height = 5.9, units = "in", dpi = 300)
+
+ 
+
+# Prepare frequency data
+freq_data <- negativeCVDP %>%
+  count(Model_Tunned) %>%
+  rename(value = n) %>%
+  mutate(type = "Frequency")
+
+# Prepare improvement data
+improv_data <- negativeCVDP %>%
+  select(Model_Tunned, value = CVDP_RelativeImprovPercentage) %>%
+  mutate(type = "Performance Impact")
+
+# Combine and ensure 'Frequency' comes first (for top placement in facet)
+combined_data <- bind_rows(freq_data, improv_data)
+combined_data$type <- factor(combined_data$type, levels = c("Frequency", "Performance Impact"))
+combined_data$Model_Tunned <- factor(combined_data$Model_Tunned)
+
+# Plot
+n_distinct(combined_data$Model_Tunned)
+
+ggplot(combined_data, aes(x = Model_Tunned, y = value)) +
+  geom_bar(stat = "identity", fill = "#CCCCCC", data = subset(combined_data, type == "Frequency")) +
+  geom_boxplot(fill = "lightgray" , data = subset(combined_data, type == "Performance Impact")) +
+  facet_grid(rows = vars(type), scales = "free_y", switch = "y") +
+  labs(
+    x = NULL,
+    y = NULL,
+    #title = "ML Algorithms Frequency and Negative Impact Distribution"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text.y.left = element_text(angle = 90 , size = 16),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 12),
+    panel.border = element_rect(color = "#CCCCCC", fill = NA, size = 1),
+    strip.placement = "outside",
+    strip.background = element_blank(),
+    axis.text.y = element_text(size = 13),
+    axis.title.x = element_text( size = 20),
+    axis.title.y = element_text( size = 20)
+  )
+
+#ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"_",tuningMethod,"_MLAlgCVDPNegativeDistrubtion.pdf",sep=''), plot = last_plot(), device = "pdf", width = 5, height = 5.9, units = "in", dpi = 300)
+
+
+ 
+
 
 
 
@@ -796,7 +1036,7 @@ ggplot(percentageData, aes(x = metric, y = Impact, fill = Scenario)) +
 
 options(encoding = "UTF-8")
 
-dev.copy2pdf(width=4.52,height=3.2 , file=paste(pathToSave,"/NegativebarfImpactPercentage.pdf",sep=''));
+#dev.copy2pdf(width=4.52,height=3.2 , file=paste(pathToSave,"/NegativebarfImpactPercentage.pdf",sep=''));
 dev.off();
 
 
@@ -1113,7 +1353,7 @@ nrow(merged_data_with_ranks)
     
     
     # summary(subset(subset_data, Model_Tunned %in% "ada")$IVDP_RelativeImprovPercentage)
-      summary(subset(subset_data, Model_Tunned %in% "MLP")$CVDP_RelativeImprovPercentage)
+      summary(subset(subset_data, Model_Tunned %in% "MLP")$IVDP_RelativeImprovPercentage)
     # summary(subset(subset_data, Model_Tunned %in% "rf")$IVDP_RelativeImprovPercentage)
     # 
     # summary(subset(subset_data, Model_Tunned %in% "ada")$CVDP_RelativeImprovPercentage)
@@ -1286,12 +1526,16 @@ nrow(merged_data_with_ranks)
     trans_new(paste("symlog", thr, base, scale, sep = "-"), trans, inv, breaks)
   }
   
+  
+  ylim <- c(-15, 200)
+  breaks <- c(-20,-10, -3,-1, 0,1,3, 10, 50, 100, 200)
+  
   ggplot(subset_data, aes(x = factor("IVDP"), y = IVDP_RelativeImprovPercentage)) +
     geom_boxplot(fill = "lightblue", outlier.shape = NA) +
     geom_boxplot(aes(x = factor("CVDP"), y = CVDP_RelativeImprovPercentage), fill = "lightgray", outlier.shape = NA) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Add horizontal line at y = 0
     scale_x_discrete(limits = rev(levels(factor(c("IVDP", "CVDP"))))) +  # Reverse factor levels
-    scale_y_continuous(trans = symlog_trans())+
+    scale_y_continuous(trans = symlog_trans(), breaks = breaks)+
     coord_cartesian(ylim =  c(-15, 200))  +
     labs(
       x = NULL,
@@ -1299,13 +1543,13 @@ nrow(merged_data_with_ranks)
       title = NULL
     ) +
     theme_minimal() +
-    theme(strip.text = element_text(size = 12),plot.margin = margin(b = 10, l=10), plot.tag.position = c(0.50, -0.07), plot.tag = element_text(size = 9),  axis.text.x = element_text(face = "bold", size = 12, angle = 90, vjust = 0.5, hjust = 1), axis.title.y = element_text( size = 18),axis.text.y = element_text(size = 8)
+    theme(strip.text = element_text(size = 12),plot.margin = margin(b = 10, l=10), plot.tag.position = c(0.50, -0.07), plot.tag = element_text(size = 9),  axis.text.x = element_text(face = "bold", size = 12, angle = 90, vjust = 0.5, hjust = 1), axis.title.y = element_text( size = 18),axis.text.y = element_text(size = 10)
           ,     panel.border = element_rect(color = "#CCCCCC", fill = NA, size = 1) ) +
     facet_wrap(~ Model_Tunned, scales = "fixed", ncol = 14, labeller = custom_labeller)
   #step2
   
   # Save the ggplot to a file
-  ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"ggplotAllModels.pdf",sep=''), plot = last_plot(), device = "pdf", width = 15, height = 9.2, units = "in", dpi = 300)
+  ggsave(paste(pathToSave,"/",expMode,targetMetric,"vsExp1",enableIVDP_one_release,"ggplotAllModels.pdf",sep=''), plot = last_plot(), device = "pdf", width = 15, height = 8.2, units = "in", dpi = 300)
   
   
   
@@ -1315,99 +1559,99 @@ nrow(merged_data_with_ranks)
 ##############################################################
   ############ Scott Knott ESD
 ###############################################################  
-# 
-# library(ScottKnottESD)
-# summary(subset_data)
-# nrow(subset_data)
-# final_df <- as.data.frame(t(subset_data))
-# # Select specific columns using subset
-#  twocol_data <- subset(subset_data, select = c(IVDP_RelativeImprovPercentage, Model_Tunned))
-#  
-#  subset_data
-#  
-#  
-#  
-#  colnames(twocol_data)
-#  # Get unique model names
-#  unique_models <- unique(twocol_data$Model_Tunned)
-#  
-#  # Pre-calculate the total count for each model
-#  model_counts <- table(twocol_data$Model_Tunned)
-#  
-#  
-#  # Create a new data frame with columns dynamically named
-#  new_data <- data.frame(setNames(replicate(length(unique_models), numeric(0), simplify = FALSE), unique_models))
-#  
-#  # Changing the shape of the data to ML columns and rows performance impact
-#  for (i in 1:length(unique_models)) {
-#    model_name <- unique_models[i]
-#    selected_data <- subset(twocol_data, Model_Tunned == model_name)
-#    for (j in 1:model_counts[model_name]) {
-#      value <- selected_data$IVDP_RelativeImprovPercentage[j]
-#      # Fill in the values based on the count for each model
-#      new_data[j, as.character(model_name)] <- value
-#    }
-#    # Increment the current row counter
-#    #current_row <- current_row + model_counts[model_name]
-#  }
-#  # Using Non-Parametric ScottKnott ESD test
-#  sk <- sk_esd(new_data, version="np")
-#  
-#  #plot(sk)
-#  
-# 
-#  sk$groups
-#  
-#  sk$nms
-#  
-#  
-#  sk$sig.level
-#  sk$m.inf
-#  
-#  
+
+library(ScottKnottESD)
+summary(subset_data)
+nrow(subset_data)
+final_df <- as.data.frame(t(subset_data))
+# Select specific columns using subset
+ twocol_data <- subset(subset_data, select = c(IVDP_RelativeImprovPercentage, Model_Tunned))
+
+ subset_data
+
+
+
+ colnames(twocol_data)
+ # Get unique model names
+ unique_models <- unique(twocol_data$Model_Tunned)
+
+ # Pre-calculate the total count for each model
+ model_counts <- table(twocol_data$Model_Tunned)
+
+
+ # Create a new data frame with columns dynamically named
+ new_data <- data.frame(setNames(replicate(length(unique_models), numeric(0), simplify = FALSE), unique_models))
+
+ # Changing the shape of the data to ML columns and rows performance impact
+ for (i in 1:length(unique_models)) {
+   model_name <- unique_models[i]
+   selected_data <- subset(twocol_data, Model_Tunned == model_name)
+   for (j in 1:model_counts[model_name]) {
+     value <- selected_data$IVDP_RelativeImprovPercentage[j]
+     # Fill in the values based on the count for each model
+     new_data[j, as.character(model_name)] <- value
+   }
+   # Increment the current row counter
+   #current_row <- current_row + model_counts[model_name]
+ }
+ # Using Non-Parametric ScottKnott ESD test
+ sk <- sk_esd(new_data, version="np")
+
+ #plot(sk)
+
+
+ sk$groups
+
+ sk$nms
+
+
+ sk$sig.level
+ sk$m.inf
+
+#
 # # #########################
-#  twocol_data <- subset(subset_data, select = c(CVDP_RelativeImprovPercentage, Model_Tunned))
-#  
-#  
-#  
-#  colnames(twocol_data)
-#  # Get unique model names unique_models <- unique(twocol_data$Model_Tunned)
-# 
-#  # Pre-calculate the total count for each model model_counts <-
-#  table(twocol_data$Model_Tunned)
-# 
-#  # Create a new data frame with columns dynamically named new_data <-
-#  data.frame(setNames(replicate(length(unique_models), numeric(0), simplify =
-#  FALSE), unique_models))
-# 
-#  for (i in 1:length(unique_models)) {
-#    model_name <- unique_models[i]
-#    selected_data <- subset(twocol_data, Model_Tunned == model_name)
-#    for (j in 1:model_counts[model_name]) {
-#      value <- selected_data$CVDP_RelativeImprovPercentage[j]
-#      # Fill in the values based on the count for each model
-#      new_data[j, as.character(model_name)] <- value
-#    }
-#    # Increment the current row counter
-#    #current_row <- current_row + model_counts[model_name]
-#  }
-#  
-#  sk <- sk_esd(new_data, version="np")
-#  
-#  plot(sk)
-#  
-#  
-#  sk
-#  
-#  sk$groups
-#  
-#  sk$nms
-#  
-#  
-#  sk$sig.level
-#    sk$m.inf
-#  
-#  nrow(sk$m.inf)
+ twocol_data <- subset(subset_data, select = c(CVDP_RelativeImprovPercentage, Model_Tunned))
+
+
+
+ colnames(twocol_data)
+ # Get unique model names unique_models <- unique(twocol_data$Model_Tunned)
+
+ # Pre-calculate the total count for each model model_counts <-
+ table(twocol_data$Model_Tunned)
+
+ # Create a new data frame with columns dynamically named new_data <-
+ data.frame(setNames(replicate(length(unique_models), numeric(0), simplify =
+ FALSE), unique_models))
+
+ for (i in 1:length(unique_models)) {
+   model_name <- unique_models[i]
+   selected_data <- subset(twocol_data, Model_Tunned == model_name)
+   for (j in 1:model_counts[model_name]) {
+     value <- selected_data$CVDP_RelativeImprovPercentage[j]
+     # Fill in the values based on the count for each model
+     new_data[j, as.character(model_name)] <- value
+   }
+   # Increment the current row counter
+   #current_row <- current_row + model_counts[model_name]
+ }
+
+ sk <- sk_esd(new_data, version="np")
+
+ plot(sk)
+
+
+ sk
+
+ sk$groups
+
+ sk$nms
+
+
+ sk$sig.level
+   sk$m.inf
+
+ nrow(sk$m.inf)
  
 #   
   ##### RQ3 
@@ -1980,6 +2224,13 @@ nrow(merged_data_with_ranks)
   small_quantile_ROC <- get_smaller_than_median_data(ROCsubset_data, "NRowTrainData_Tunned")
   large_quantile_ROC <- get_larger_than_median_data(ROCsubset_data, "NRowTrainData_Tunned")
   
+  
+  
+  summary(large_quantile_ROC$CVDP_RelativeImprovPercentage)
+  summary(small_quantile_ROC$CVDP_RelativeImprovPercentage)
+  
+  summary(large_quantile_ROC$IVDP_RelativeImprovPercentage)
+  summary(small_quantile_ROC$IVDP_RelativeImprovPercentage)
   
   min(large_quantile_ROC$NRowTrainData_Tunned)
   max(large_quantile_ROC$NRowTrainData_Tunned)
